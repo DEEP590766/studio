@@ -53,7 +53,7 @@ export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Ex
 
   const manualForm = useForm<z.infer<typeof manualFormSchema>>({
     resolver: zodResolver(manualFormSchema),
-    defaultValues: { amount: undefined, category: "" },
+    defaultValues: { amount: '' as any, category: "" },
   });
 
   const voiceForm = useForm<z.infer<typeof voiceFormSchema>>({
