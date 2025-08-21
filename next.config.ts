@@ -25,9 +25,6 @@ const nextConfig: NextConfig = {
       }
     ],
   },
-  devIndicators: {
-    buildActivity: false,
-  },
   experimental: {
     allowedDevOrigins: ["*.cloudworkstations.dev"],
   },
