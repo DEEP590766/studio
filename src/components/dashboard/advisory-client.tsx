@@ -1,66 +1,93 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Bot, Loader2, Sparkles } from "lucide-react";
-
+import { useState, useTransition, useRef, useEffect } from "react";
+import { Bot, Loader2, User, Send } from "lucide-react";
 import { generateAndRevalidateFinanceTips } from "@/app/actions";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useExpenses } from "@/hooks/use-expenses";
+import { ChatInput } from "./chat-input";
+import { ChatMessage, Message } from "./chat-message";
 
 export function AdvisoryClient() {
-  const [advice, setAdvice] = useState<string[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const { expenses, loading: expensesLoading } = useExpenses();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const handleFetchAdvice = () => {
+
+  useEffect(() => {
+    if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+  const handleInitialAnalysis = () => {
     startTransition(async () => {
-      const recentExpenses = expenses.slice(0, 20); // Use recent 20 expenses for analysis
-      const result = await generateAndRevalidateFinanceTips("Personalized Advice", recentExpenses);
-      if (result.success && result.data) {
-        setAdvice(result.data);
-        toast({ title: "Personalized Advice Generated!", description: `Here is some advice based on your recent spending.` });
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Could not generate new advice at this time.",
-        });
-      }
+        const userMessage: Message = { id: Date.now().toString(), role: 'user', content: 'Analyze my recent spending and give me personalized advice.' };
+        setMessages(prev => [...prev, userMessage]);
+
+        const loadingMessage: Message = { id: (Date.now() + 1).toString(), role: 'assistant', content: <Loader2 className="h-5 w-5 animate-spin" /> };
+        setMessages(prev => [...prev, loadingMessage]);
+
+        const recentExpenses = expenses.slice(0, 20);
+        const result = await generateAndRevalidateFinanceTips("Personalized Advice", recentExpenses);
+        
+        if (result.success && result.data) {
+            const adviceContent = (
+                <ul className="list-disc space-y-2 pl-5">
+                    {result.data.map((tip, i) => <li key={i}>{tip}</li>)}
+                </ul>
+            );
+            const assistantMessage: Message = { id: (Date.now() + 2).toString(), role: 'assistant', content: adviceContent };
+            setMessages(prev => [...prev.slice(0, -1), assistantMessage]);
+        } else {
+            const errorMessage: Message = { id: (Date.now() + 2).toString(), role: 'assistant', content: "Sorry, I couldn't generate advice right now. Please try again later." };
+            setMessages(prev => [...prev.slice(0, -1), errorMessage]);
+            toast({ variant: "destructive", title: "Error", description: result.error });
+        }
     });
+  }
+
+  const handleSendMessage = (input: string) => {
+    // For now, this is a placeholder. We will implement the Genkit flow for this next.
+    const userMessage: Message = { id: Date.now().toString(), role: 'user', content: input };
+    setMessages(prev => [...prev, userMessage]);
+
+    const loadingMessage: Message = { id: (Date.now() + 1).toString(), role: 'assistant', content: <Loader2 className="h-5 w-5 animate-spin" /> };
+    setMessages(prev => [...prev, loadingMessage]);
+
+    setTimeout(() => {
+        const dummyResponse: Message = { 
+            id: (Date.now() + 2).toString(), 
+            role: 'assistant', 
+            content: "This feature is coming soon! I will be able to answer your questions about your spending."
+        };
+        setMessages(prev => [...prev.slice(0, -1), dummyResponse]);
+    }, 1500);
   };
 
   return (
-    <div>
-      <div className="mb-6">
-        <Button onClick={handleFetchAdvice} disabled={isPending || expensesLoading}>
-          {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
-          {expensesLoading ? "Loading Expenses..." : "Analyze My Spending"}
-        </Button>
-      </div>
-
-      <div className="space-y-4">
-        {advice.length > 0 ? (
-          advice.map((tip, index) => (
-            <Card key={index} className="flex items-start p-4">
-               <div className="flex-shrink-0 mr-4">
-                 <div className="bg-primary/10 p-3 rounded-full">
-                    <Sparkles className="h-6 w-6 text-primary" />
-                 </div>
-              </div>
-              <CardContent className="p-0 pt-1">
-                <p>{tip}</p>
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          <div className="text-center text-muted-foreground py-16">
-            <p>Click the button to get personalized financial advice based on your spending.</p>
-          </div>
-        )}
-      </div>
+    <div className="flex flex-col h-[calc(100vh-10rem)] max-h-[700px] bg-card border rounded-lg shadow-lg">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-6">
+            {messages.length > 0 ? (
+                messages.map((msg) => <ChatMessage key={msg.id} message={msg} />)
+            ) : (
+                <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+                    <Bot className="h-16 w-16 mb-4" />
+                    <h2 className="text-2xl font-semibold mb-2">AI Spending Analysis</h2>
+                    <p className="mb-4">I can analyze your spending, answer questions, and give you personalized tips.</p>
+                    <Button onClick={handleInitialAnalysis} disabled={isPending || expensesLoading}>
+                        {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
+                        {expensesLoading ? "Loading Expenses..." : "Analyze My Spending"}
+                    </Button>
+                </div>
+            )}
+        </div>
+        <div className="p-4 border-t">
+            <ChatInput onSendMessage={handleSendMessage} isPending={isPending} />
+        </div>
     </div>
   );
 }
