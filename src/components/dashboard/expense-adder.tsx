@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { FileText, Loader2 } from "lucide-react";
+import { FileText, Loader2, Mic, StopCircle, Bot } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -33,15 +33,17 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { processVoiceInput } from "@/app/actions";
+import { processVoiceInput, processAudioInput } from "@/app/actions";
 import type { Expense } from "@/lib/types";
+import { cn } from "@/lib/utils";
+
 
 const manualFormSchema = z.object({
   amount: z.coerce.number().min(0.01, "Amount must be greater than 0."),
   category: z.string().min(1, "Please select a category."),
 });
 
-const voiceFormSchema = z.object({
+const textCommandFormSchema = z.object({
   prompt: z.string().min(10, "Please provide a more detailed description."),
 });
 
@@ -51,13 +53,17 @@ export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Ex
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
   const manualForm = useForm<z.infer<typeof manualFormSchema>>({
     resolver: zodResolver(manualFormSchema),
     defaultValues: { amount: '' as any, category: "" },
   });
 
-  const voiceForm = useForm<z.infer<typeof voiceFormSchema>>({
-    resolver: zodResolver(voiceFormSchema),
+  const textCommandForm = useForm<z.infer<typeof textCommandFormSchema>>({
+    resolver: zodResolver(textCommandFormSchema),
     defaultValues: { prompt: "" },
   });
 
@@ -67,13 +73,13 @@ export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Ex
     manualForm.reset();
   }
 
-  function onVoiceSubmit(values: z.infer<typeof voiceFormSchema>) {
+  function onTextCommandSubmit(values: z.infer<typeof textCommandFormSchema>) {
     startTransition(async () => {
       const result = await processVoiceInput(values.prompt);
       if (result.success && result.data) {
         onAddExpense(result.data);
         toast({ title: "Expense Added via Text Command", description: `₹${result.data.amount} for ${result.data.category} has been recorded.` });
-        voiceForm.reset();
+        textCommandForm.reset();
       } else {
         toast({
           variant: "destructive",
@@ -84,6 +90,58 @@ export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Ex
     });
   }
 
+  const handleStartRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorderRef.current.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = () => {
+          const base64Audio = reader.result as string;
+          startTransition(async () => {
+            const result = await processAudioInput(base64Audio);
+             if (result.success && result.data) {
+                onAddExpense(result.data);
+                toast({ title: "Expense Added via Voice", description: `₹${result.data.amount} for ${result.data.category} has been recorded.` });
+            } else {
+                toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: result.error || "Could not process your voice command.",
+                });
+            }
+          });
+        };
+      };
+
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+      toast({ title: "Recording Started", description: "Speak your expense now." });
+    } catch (err) {
+      toast({ variant: "destructive", title: "Microphone Error", description: "Could not access microphone." });
+      console.error("Microphone access denied:", err);
+    }
+  };
+
+  const handleStopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      // Get the stream and stop all tracks to turn off the mic indicator
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      toast({ title: "Recording Stopped", description: "Processing your expense..." });
+    }
+  };
+
+
   return (
     <Card className="h-full">
       <CardHeader>
@@ -91,11 +149,50 @@ export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Ex
         <CardDescription>Record a new transaction.</CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="manual">
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs defaultValue="voice">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="voice">Voice Command</TabsTrigger>
+            <TabsTrigger value="text">Text Command</TabsTrigger>
             <TabsTrigger value="manual">Manual</TabsTrigger>
-            <TabsTrigger value="voice">Text Command</TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="voice">
+             <div className="pt-4 space-y-4 text-center">
+                <p className="text-sm text-muted-foreground">
+                    {isRecording ? "Recording your expense..." : "Press the button and speak to record an expense."}
+                </p>
+                <Button 
+                    onClick={isRecording ? handleStopRecording : handleStartRecording} 
+                    disabled={isPending}
+                    size="icon"
+                    className={cn("w-24 h-24 rounded-full", isRecording && "bg-destructive hover:bg-destructive/90")}
+                >
+                    {isPending ? <Loader2 className="h-10 w-10 animate-spin" /> : (isRecording ? <StopCircle className="h-10 w-10" /> : <Mic className="h-10 w-10" />)}
+                </Button>
+                {isRecording && <p className="text-xs text-primary animate-pulse">Listening...</p>}
+             </div>
+          </TabsContent>
+
+          <TabsContent value="text">
+            <Form {...textCommandForm}>
+              <form onSubmit={textCommandForm.handleSubmit(onTextCommandSubmit)} className="space-y-4 pt-4">
+                <FormField control={textCommandForm.control} name="prompt" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Describe your expense</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Type a command like 'I spent 500 rupees on groceries' or 'Travel, 250 for the train ticket'" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <Button type="submit" className="w-full" disabled={isPending}>
+                  {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Bot className="mr-2 h-4 w-4" />}
+                  Process Command
+                </Button>
+              </form>
+            </Form>
+          </TabsContent>
+
           <TabsContent value="manual">
             <Form {...manualForm}>
               <form onSubmit={manualForm.handleSubmit(onManualSubmit)} className="space-y-4 pt-4">
@@ -121,25 +218,6 @@ export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Ex
                   </FormItem>
                 )} />
                 <Button type="submit" className="w-full">Add Expense</Button>
-              </form>
-            </Form>
-          </TabsContent>
-          <TabsContent value="voice">
-            <Form {...voiceForm}>
-              <form onSubmit={voiceForm.handleSubmit(onVoiceSubmit)} className="space-y-4 pt-4">
-                <FormField control={voiceForm.control} name="prompt" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Describe your expense</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Type a command like 'I spent 500 rupees on groceries' or 'Travel, 250 for the train ticket'" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <Button type="submit" className="w-full" disabled={isPending}>
-                  {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
-                  Process Command
-                </Button>
               </form>
             </Form>
           </TabsContent>

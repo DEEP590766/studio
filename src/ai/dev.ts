@@ -3,3 +3,4 @@ config();
 
 import '@/ai/flows/extract-expense-info.ts';
 import '@/ai/flows/generate-finance-tips.ts';
+import '@/ai/flows/transcribe-audio.ts';
