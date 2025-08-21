@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Mic, Loader2 } from "lucide-react";
+import { FileText, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -72,7 +72,7 @@ export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Ex
       const result = await processVoiceInput(values.prompt);
       if (result.success && result.data) {
         onAddExpense(result.data);
-        toast({ title: "Expense Added via Voice", description: `₹${result.data.amount} for ${result.data.category} has been recorded.` });
+        toast({ title: "Expense Added via Text Command", description: `₹${result.data.amount} for ${result.data.category} has been recorded.` });
         voiceForm.reset();
       } else {
         toast({
@@ -94,7 +94,7 @@ export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Ex
         <Tabs defaultValue="manual">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="manual">Manual</TabsTrigger>
-            <TabsTrigger value="voice">Voice</TabsTrigger>
+            <TabsTrigger value="voice">Text Command</TabsTrigger>
           </TabsList>
           <TabsContent value="manual">
             <Form {...manualForm}>
@@ -131,14 +131,14 @@ export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Ex
                   <FormItem>
                     <FormLabel>Describe your expense</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="e.g., 'Spent fifty rupees on coffee' or 'Travel, 250'" {...field} />
+                      <Textarea placeholder="Type a command like 'I spent 500 rupees on groceries' or 'Travel, 250 for the train ticket'" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <Button type="submit" className="w-full" disabled={isPending}>
-                  {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Mic className="mr-2 h-4 w-4" />}
-                  Process Input
+                  {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                  Process Command
                 </Button>
               </form>
             </Form>

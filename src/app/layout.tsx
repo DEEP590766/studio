@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'FinSpeak',
+  title: 'SpeakCents',
   description: 'Your personal finance & budgeting assistant with voice input.',
 };
 
