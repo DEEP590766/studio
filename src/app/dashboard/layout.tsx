@@ -51,7 +51,7 @@ export default function DashboardLayout({
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
             <PiggyBank className="w-8 h-8 text-primary" />
-            <h1 className="text-xl font-bold">FinVoice</h1>
+            <h1 className="text-xl font-bold">Zenitho</h1>
           </div>
         </SidebarHeader>
         <SidebarContent>
