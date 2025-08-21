@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Target, Lightbulb, Wallet, Bot, Sun, Moon } from "lucide-react";
+import { useState, useEffect } from "react";
 
 import {
   SidebarProvider,
@@ -27,6 +28,12 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
 
   const menuItems = [
     {
@@ -90,15 +97,21 @@ export default function DashboardLayout({
         </SidebarContent>
         <SidebarFooter>
             <div className="flex items-center justify-between p-4">
-                <div className="flex items-center gap-2">
-                    {theme === 'light' ? <Sun /> : <Moon />}
-                    <span className="text-sm">{theme === 'light' ? 'Light Mode' : 'Dark Mode'}</span>
-                </div>
-                <Switch
-                    checked={theme === 'dark'}
-                    onCheckedChange={handleThemeChange}
-                    aria-label="Toggle theme"
-                />
+              {isClient ? (
+                <>
+                  <div className="flex items-center gap-2">
+                      {theme === 'light' ? <Sun /> : <Moon />}
+                      <span className="text-sm">{theme === 'light' ? 'Light Mode' : 'Dark Mode'}</span>
+                  </div>
+                  <Switch
+                      checked={theme === 'dark'}
+                      onCheckedChange={handleThemeChange}
+                      aria-label="Toggle theme"
+                  />
+                </>
+              ) : (
+                <div className="h-6 w-full" /> 
+              )}
             </div>
         </SidebarFooter>
       </Sidebar>
