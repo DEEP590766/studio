@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { useState, useTransition, useRef, useCallback } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -57,6 +58,12 @@ export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Ex
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
 
   const manualForm = useForm<z.infer<typeof manualFormSchema>>({
     resolver: zodResolver(manualFormSchema),
@@ -90,10 +97,35 @@ export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Ex
       }
     });
   }
+  
+  const stopRecordingAndProcess = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.stop();
+    }
+  }, []);
+
+  const handleStopRecording = useCallback(() => {
+    if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
+        silenceTimerRef.current = null;
+    }
+    if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+    }
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close();
+    }
+    
+    setIsRecording(false);
+    toast({ title: "Recording Stopped", description: "Processing your expense..." });
+  }, [toast]);
+  
 
   const handleStartRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       mediaRecorderRef.current = new MediaRecorder(stream);
       audioChunksRef.current = [];
 
@@ -102,7 +134,12 @@ export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Ex
       };
 
       mediaRecorderRef.current.onstop = () => {
+        handleStopRecording();
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+         if (audioBlob.size === 0) {
+            toast({ variant: 'destructive', title: 'No audio detected', description: 'Please try speaking again.' });
+            return;
+        }
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = () => {
@@ -125,20 +162,45 @@ export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Ex
 
       mediaRecorderRef.current.start();
       setIsRecording(true);
-      toast({ title: "Recording Started", description: "Speak your expense now." });
+      toast({ title: "Recording Started", description: "Speak your expense now. Recording will stop automatically after a pause." });
+      
+      // Silence detection
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      sourceRef.current = audioContextRef.current.createMediaStreamSource(stream);
+      sourceRef.current.connect(analyserRef.current);
+      const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+
+      const checkForSilence = () => {
+          if (!isRecording) return;
+
+          analyserRef.current!.getByteTimeDomainData(dataArray);
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) {
+              sum += Math.abs(dataArray[i] - 128);
+          }
+          const avg = sum / dataArray.length;
+
+          if (avg < 3) { // Threshold for silence
+              if (!silenceTimerRef.current) {
+                  silenceTimerRef.current = setTimeout(() => {
+                      stopRecordingAndProcess();
+                  }, 2000); // 2 seconds of silence
+              }
+          } else {
+              if (silenceTimerRef.current) {
+                  clearTimeout(silenceTimerRef.current);
+                  silenceTimerRef.current = null;
+              }
+          }
+          requestAnimationFrame(checkForSilence);
+      };
+      checkForSilence();
+
+
     } catch (err) {
       toast({ variant: "destructive", title: "Microphone Error", description: "Could not access microphone." });
       console.error("Microphone access denied:", err);
-    }
-  };
-
-  const handleStopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      // Get the stream and stop all tracks to turn off the mic indicator
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-      toast({ title: "Recording Stopped", description: "Processing your expense..." });
     }
   };
 
@@ -163,7 +225,7 @@ export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Ex
                     {isRecording ? "Recording your expense..." : "Press the button and speak to record an expense."}
                 </p>
                 <Button 
-                    onClick={isRecording ? handleStopRecording : handleStartRecording} 
+                    onClick={isRecording ? stopRecordingAndProcess : handleStartRecording} 
                     disabled={isPending}
                     size="icon"
                     className={cn("w-24 h-24 rounded-full", isRecording && "bg-destructive hover:bg-destructive/90")}
