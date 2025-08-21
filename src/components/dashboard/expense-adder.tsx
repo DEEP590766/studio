@@ -125,7 +125,7 @@ export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Ex
   const processAudio = useCallback(() => {
     const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
     if (audioBlob.size === 0) {
-        toast({ variant: 'destructive', title: 'No audio detected', description: 'Please try speaking again.' });
+        toast({ variant: 'destructive', title: 'No audio detected', description: 'I didn’t hear anything. Please try again.' });
         return;
     }
     const reader = new FileReader();
