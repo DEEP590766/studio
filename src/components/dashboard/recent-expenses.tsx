@@ -102,7 +102,7 @@ export function RecentExpenses({ expenses }: { expenses: Expense[] }) {
                       style: "currency",
                       currency: "INR",
                     }).format(expense.amount)}
-                  </tabelcell>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
