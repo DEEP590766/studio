@@ -1,0 +1,62 @@
+'use server';
+
+/**
+ * @fileOverview This file defines a Genkit flow for generating personal finance tips.
+ *
+ * It includes:
+ * - `generateFinanceTips`: A function to generate finance tips.
+ * - `FinanceTipsInput`: The input type for the generateFinanceTips function.
+ * - `FinanceTipsOutput`: The output type for the generateFinanceTips function.
+ */
+
+import {ai} from '@/ai/genkit';
+import {z} from 'genkit';
+
+const FinanceTipsInputSchema = z.object({
+  topic: z
+    .string()
+    .optional()
+    .describe('Optional topic to generate finance tips about.'),
+  numberOfTips: z
+    .number()
+    .optional()
+    .default(3)
+    .describe('Number of tips to generate.'),
+});
+export type FinanceTipsInput = z.infer<typeof FinanceTipsInputSchema>;
+
+const FinanceTipsOutputSchema = z.object({
+  tips: z.array(z.string()).describe('An array of personal finance tips.'),
+});
+export type FinanceTipsOutput = z.infer<typeof FinanceTipsOutputSchema>;
+
+export async function generateFinanceTips(input: FinanceTipsInput): Promise<FinanceTipsOutput> {
+  return generateFinanceTipsFlow(input);
+}
+
+const prompt = ai.definePrompt({
+  name: 'financeTipsPrompt',
+  input: {schema: FinanceTipsInputSchema},
+  output: {schema: FinanceTipsOutputSchema},
+  prompt: `You are a personal finance expert. Generate a list of {{{numberOfTips}}} personal finance tips.
+
+  {{#if topic}}
+  The tips should be related to the following topic: {{{topic}}}.
+  {{/if}}
+  
+  The tips should be concise and actionable.
+  Format the output as a JSON array of strings.
+  `,
+});
+
+const generateFinanceTipsFlow = ai.defineFlow(
+  {
+    name: 'generateFinanceTipsFlow',
+    inputSchema: FinanceTipsInputSchema,
+    outputSchema: FinanceTipsOutputSchema,
+  },
+  async input => {
+    const {output} = await prompt(input);
+    return output!;
+  }
+);
