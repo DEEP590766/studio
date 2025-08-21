@@ -15,12 +15,15 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import type { Expense } from "@/lib/types";
+import { cn } from "@/lib/utils";
+
+const cardHoverEffect = "transition-all duration-200 hover:shadow-xl hover:-translate-y-1";
 
 export function RecentExpenses({ expenses }: { expenses: Expense[] }) {
   const recentExpenses = expenses.slice(0, 5);
 
   return (
-    <Card className="h-full">
+    <Card className={cn("h-full", cardHoverEffect)}>
       <CardHeader>
         <CardTitle>Recent Transactions</CardTitle>
         <CardDescription>Your last 5 expenses.</CardDescription>

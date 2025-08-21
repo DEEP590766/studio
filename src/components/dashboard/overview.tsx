@@ -17,6 +17,7 @@ import { PieChart, Pie, Cell, Tooltip } from "recharts";
 import type { Expense } from "@/lib/types";
 import { useMemo } from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const chartConfig = {
   expenses: {
@@ -105,11 +106,12 @@ export function Overview({ expenses }: { expenses: Expense[] }) {
 
   const ChangeIcon = weeklyChange > 0 ? TrendingDown : TrendingUp;
   const changeColor = weeklyChange > 0 ? "text-destructive" : "text-green-500";
-
+  
+  const cardHoverEffect = "transition-all duration-200 hover:shadow-xl hover:-translate-y-1";
 
   return (
     <div className="grid gap-6 md:grid-cols-3">
-      <Card>
+      <Card className={cardHoverEffect}>
         <CardHeader>
           <CardTitle>Total Expenses (This Month)</CardTitle>
            <CardDescription>Your total spending for the current month.</CardDescription>
@@ -123,7 +125,7 @@ export function Overview({ expenses }: { expenses: Expense[] }) {
           </p>
         </CardContent>
       </Card>
-        <Card>
+        <Card className={cardHoverEffect}>
             <CardHeader>
                 <CardTitle>7-Day Average Spend</CardTitle>
                 <CardDescription>Your average daily spend over the last week.</CardDescription>
@@ -143,7 +145,7 @@ export function Overview({ expenses }: { expenses: Expense[] }) {
                 )}
             </CardContent>
         </Card>
-      <Card>
+      <Card className={cardHoverEffect}>
         <CardHeader>
           <CardTitle>Expense Breakdown</CardTitle>
            <CardDescription>Spending distribution for the current month.</CardDescription>

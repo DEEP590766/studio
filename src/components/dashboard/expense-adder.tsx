@@ -48,6 +48,7 @@ const textCommandFormSchema = z.object({
 });
 
 const categories = ["Food", "Travel", "Shopping", "Entertainment", "Bills", "Other"];
+const cardHoverEffect = "transition-all duration-200 hover:shadow-xl hover:-translate-y-1";
 
 export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Expense, "id" | "date">) => void }) {
   const { toast } = useToast();
@@ -143,7 +144,7 @@ export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Ex
 
 
   return (
-    <Card className="h-full">
+    <Card className={cn("h-full", cardHoverEffect)}>
       <CardHeader>
         <CardTitle>Add Expense</CardTitle>
         <CardDescription>Record a new transaction.</CardDescription>
