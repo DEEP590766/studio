@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useState, useTransition, useRef, useEffect } from "react";
 import { Bot, Loader2, User, Send } from "lucide-react";
-import { generateAndRevalidateFinanceTips } from "@/app/actions";
+import { generateAndRevalidateFinanceTips, askLLMAboutExpenses } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useExpenses } from "@/hooks/use-expenses";
@@ -51,21 +52,25 @@ export function AdvisoryClient() {
   }
 
   const handleSendMessage = (input: string) => {
-    // For now, this is a placeholder. We will implement the Genkit flow for this next.
-    const userMessage: Message = { id: Date.now().toString(), role: 'user', content: input };
-    setMessages(prev => [...prev, userMessage]);
+    startTransition(async () => {
+        const userMessage: Message = { id: Date.now().toString(), role: 'user', content: input };
+        setMessages(prev => [...prev, userMessage]);
 
-    const loadingMessage: Message = { id: (Date.now() + 1).toString(), role: 'assistant', content: <Loader2 className="h-5 w-5 animate-spin" /> };
-    setMessages(prev => [...prev, loadingMessage]);
+        const loadingMessage: Message = { id: (Date.now() + 1).toString(), role: 'assistant', content: <Loader2 className="h-5 w-5 animate-spin" /> };
+        setMessages(prev => [...prev, loadingMessage]);
 
-    setTimeout(() => {
-        const dummyResponse: Message = { 
-            id: (Date.now() + 2).toString(), 
-            role: 'assistant', 
-            content: "This feature is coming soon! I will be able to answer your questions about your spending."
-        };
-        setMessages(prev => [...prev.slice(0, -1), dummyResponse]);
-    }, 1500);
+        const recentExpenses = expenses.slice(0, 50); // Send up to 50 recent expenses for context
+        const result = await askLLMAboutExpenses(input, recentExpenses);
+        
+        if (result.success && result.data) {
+            const assistantMessage: Message = { id: (Date.now() + 2).toString(), role: 'assistant', content: result.data };
+            setMessages(prev => [...prev.slice(0, -1), assistantMessage]);
+        } else {
+            const errorMessage: Message = { id: (Date.now() + 2).toString(), role: 'assistant', content: "Sorry, I couldn't answer your question right now. Please try again later." };
+            setMessages(prev => [...prev.slice(0, -1), errorMessage]);
+            toast({ variant: "destructive", title: "Error", description: result.error });
+        }
+    });
   };
 
   return (

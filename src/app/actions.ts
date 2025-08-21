@@ -1,5 +1,7 @@
+
 "use server";
 
+import { askLLM } from "@/ai/flows/ask-llm";
 import { extractExpenseInfo } from "@/ai/flows/extract-expense-info";
 import { generateFinanceTips } from "@/ai/flows/generate-finance-tips";
 import { transcribeAudio } from "@/ai/flows/transcribe-audio";
@@ -50,4 +52,14 @@ export async function generateAndRevalidateFinanceTips(topic?: string, expenses?
         revalidatePath("/dashboard/advisory");
     }
     return result;
+}
+
+export async function askLLMAboutExpenses(query: string, expenses: Expense[]) {
+    try {
+        const result = await askLLM({ query, expenses });
+        return { success: true, data: result.answer };
+    } catch (error) {
+        console.error("Error asking LLM about expenses:", error);
+        return { success: false, error: "Failed to get an answer." };
+    }
 }
