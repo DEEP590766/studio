@@ -1,3 +1,4 @@
+
 "use client";
 
 import Papa from "papaparse";
@@ -25,7 +26,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
 const cardHoverEffect =
-  "transition-all duration-200 hover:shadow-xl hover:-translate-y-1";
+  "transition-all duration-200 hover:shadow-xl hover:-translate-y-1 hover:border-accent";
 
 export function RecentExpenses({ expenses }: { expenses: Expense[] }) {
   const recentExpenses = expenses.slice(0, 5);

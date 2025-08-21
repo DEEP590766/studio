@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -107,7 +108,7 @@ export function Overview({ expenses }: { expenses: Expense[] }) {
   const ChangeIcon = weeklyChange > 0 ? TrendingDown : TrendingUp;
   const changeColor = weeklyChange > 0 ? "text-destructive" : "text-green-500";
   
-  const cardHoverEffect = "transition-all duration-200 hover:shadow-xl hover:-translate-y-1";
+  const cardHoverEffect = "transition-all duration-200 hover:shadow-xl hover:-translate-y-1 hover:border-accent";
 
   return (
     <div className="grid gap-6 md:grid-cols-3">

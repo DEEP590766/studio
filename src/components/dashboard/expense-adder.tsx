@@ -49,7 +49,7 @@ const textCommandFormSchema = z.object({
 });
 
 const categories = ["Food", "Travel", "Shopping", "Entertainment", "Bills", "Other"];
-const cardHoverEffect = "transition-all duration-200 hover:shadow-xl hover:-translate-y-1";
+const cardHoverEffect = "transition-all duration-200 hover:shadow-xl hover:-translate-y-1 hover:border-accent";
 
 export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Expense, "id" | "date">) => void }) {
   const { toast } = useToast();
@@ -103,7 +103,7 @@ export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Ex
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
       mediaRecorderRef.current.stop();
     }
-     // The rest of the cleanup is in mediaRecorderRef.current.onstop
+    // The rest of the cleanup is in mediaRecorderRef.current.onstop
   }, []);
 
   const processAudio = useCallback((audioBlob: Blob) => {
@@ -129,7 +129,7 @@ export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Ex
         }
       });
     };
-  }, [onAddExpense, toast, startTransition]);
+  }, [onAddExpense, toast]);
 
   const handleStartRecording = async () => {
     if (isRecording) return;
@@ -152,8 +152,7 @@ export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Ex
             streamRef.current = null;
         }
         if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-            audioContextRef.current.close();
-            audioContextRef.current = null;
+            audioContextRef.current.close().then(() => audioContextRef.current = null);
         }
         if (silenceTimerRef.current) {
             clearTimeout(silenceTimerRef.current);
@@ -182,7 +181,7 @@ export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Ex
       const dataArray = new Uint8Array(bufferLength);
 
       const checkForSilence = () => {
-          if (!mediaRecorderRef.current || mediaRecorderRef.current.state !== 'recording' || !analyserRef.current) {
+          if (!analyserRef.current) {
             if(animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
             return;
           }
