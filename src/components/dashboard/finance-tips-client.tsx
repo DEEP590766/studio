@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { Lightbulb, Loader2 } from "lucide-react";
 
-import { getFinanceTips } from "@/app/actions";
+import { generateAndRevalidateFinanceTips } from "@/app/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,7 @@ export function FinanceTipsClient({ initialTips }: { initialTips: string[] }) {
 
   const handleFetchTips = () => {
     startTransition(async () => {
-      const result = await getFinanceTips(topic);
+      const result = await generateAndRevalidateFinanceTips(topic);
       if (result.success && result.data) {
         setTips(result.data);
         toast({ title: "New Tips Generated!", description: `Here are some tips about ${topic || 'general finance'}.` });
