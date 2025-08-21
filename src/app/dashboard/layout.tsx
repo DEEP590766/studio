@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Target, Lightbulb, PiggyBank, Bot } from "lucide-react";
+import { LayoutDashboard, Target, Lightbulb, Wallet, Bot, Sun, Moon } from "lucide-react";
 
 import {
   SidebarProvider,
@@ -13,7 +13,10 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarInset,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
+import { Switch } from "@/components/ui/switch";
+import { useTheme } from "@/hooks/use-theme";
 
 export default function DashboardLayout({
   children,
@@ -21,6 +24,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { theme, setTheme } = useTheme();
 
   const menuItems = [
     {
@@ -45,12 +49,16 @@ export default function DashboardLayout({
     },
   ];
 
+  const handleThemeChange = (isChecked: boolean) => {
+    setTheme(isChecked ? "dark" : "light");
+  };
+
   return (
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
-            <PiggyBank className="w-8 h-8 text-primary" />
+            <Wallet className="w-8 h-8 text-primary" />
             <h1 className="text-xl font-bold">Zenitho</h1>
           </div>
         </SidebarHeader>
@@ -72,6 +80,19 @@ export default function DashboardLayout({
             ))}
           </SidebarMenu>
         </SidebarContent>
+        <SidebarFooter>
+            <div className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-2">
+                    {theme === 'light' ? <Sun /> : <Moon />}
+                    <span className="text-sm">{theme === 'light' ? 'Light Mode' : 'Dark Mode'}</span>
+                </div>
+                <Switch
+                    checked={theme === 'dark'}
+                    onCheckedChange={handleThemeChange}
+                    aria-label="Toggle theme"
+                />
+            </div>
+        </SidebarFooter>
       </Sidebar>
       <SidebarInset>
         <main className="p-4 sm:p-6 lg:p-8">{children}</main>
