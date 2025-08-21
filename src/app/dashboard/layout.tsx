@@ -2,7 +2,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Target, Lightbulb, Wallet, Bot, Sun, Moon } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -20,6 +19,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/hooks/use-theme";
+import { Logo } from "@/components/logo";
 
 export default function DashboardLayout({
   children,
@@ -67,13 +67,7 @@ export default function DashboardLayout({
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
-            <Image 
-              src="https://storage.googleapis.com/project-hosting-dev-us-west1-429321.appspot.com/1724263051390-sxeiiiq5" 
-              alt="Zenitho Logo"
-              width={32}
-              height={32}
-              className="rounded-full"
-            />
+            <Logo className="h-8 w-8 text-primary" />
             <h1 className="text-xl font-bold">Zenitho</h1>
           </div>
         </SidebarHeader>
