@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Target, Lightbulb, Wallet, Bot, Sun, Moon } from "lucide-react";
 import { useState, useEffect } from "react";
-import Image from "next/image";
+import { Logo } from "@/components/logo";
 
 import {
   SidebarProvider,
@@ -67,7 +67,7 @@ export default function DashboardLayout({
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
-            <Image src="https://i.ibb.co/GQLD905/logo.png" alt="Zenitho Logo" width={32} height={32} className="rounded-full" />
+            <Logo />
             <h1 className="text-xl font-bold">Zenitho</h1>
           </div>
         </SidebarHeader>

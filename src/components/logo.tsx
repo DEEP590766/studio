@@ -12,10 +12,10 @@ export const Logo = React.forwardRef<
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={cn("h-6 w-6", className)}
+      className={cn("h-8 w-8", className)}
       {...props}
     >
-        <path d="M12 2L2 12h5v10h10V12h5L12 2z" fill="currentColor" />
+        <path d="M6 3H18L12 12L18 21H6L12 12L6 3Z" fill="currentColor" />
     </svg>
   )
 })
