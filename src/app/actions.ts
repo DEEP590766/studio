@@ -3,6 +3,7 @@
 import { extractExpenseInfo } from "@/ai/flows/extract-expense-info";
 import { generateFinanceTips } from "@/ai/flows/generate-finance-tips";
 import { transcribeAudio } from "@/ai/flows/transcribe-audio";
+import { Expense } from "@/lib/types";
 import { revalidatePath } from "next/cache";
 
 export async function processVoiceInput(voiceInput: string) {
@@ -24,6 +25,7 @@ export async function processAudioInput(audioDataUri: string) {
         }
         const result = await extractExpenseInfo({ voiceInput: transcription.text });
         revalidatePath("/dashboard");
+        revalidatePath("/dashboard/advisory");
         return { success: true, data: result };
     } catch (error) {
         console.error("Error processing audio input:", error);
@@ -31,9 +33,9 @@ export async function processAudioInput(audioDataUri: string) {
     }
 }
 
-export async function getFinanceTips(topic?: string) {
+export async function getFinanceTips(topic?: string, expenses?: Expense[]) {
     try {
-        const result = await generateFinanceTips({ topic, numberOfTips: 5 });
+        const result = await generateFinanceTips({ topic, numberOfTips: 5, expenses });
         return { success: true, data: result.tips };
     } catch (error) {
         console.error("Error generating finance tips:", error);
@@ -41,10 +43,11 @@ export async function getFinanceTips(topic?: string) {
     }
 }
 
-export async function generateAndRevalidateFinanceTips(topic?: string) {
-    const result = await getFinanceTips(topic);
+export async function generateAndRevalidateFinanceTips(topic?: string, expenses?: Expense[]) {
+    const result = await getFinanceTips(topic, expenses);
     if (result.success) {
         revalidatePath("/dashboard/tips");
+        revalidatePath("/dashboard/advisory");
     }
     return result;
 }

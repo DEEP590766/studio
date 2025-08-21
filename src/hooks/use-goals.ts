@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Goal } from "@/lib/types";
 
-const STORAGE_KEY = "finspeak_goals";
+const STORAGE_KEY = "finvoice_goals";
 
 export function useGoals() {
   const [goals, setGoals] = useState<Goal[]>([]);

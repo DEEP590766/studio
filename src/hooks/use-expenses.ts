@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Expense } from "@/lib/types";
 
-const STORAGE_KEY = "finspeak_expenses";
+const STORAGE_KEY = "finvoice_expenses";
 
 export function useExpenses() {
   const [expenses, setExpenses] = useState<Expense[]>([]);

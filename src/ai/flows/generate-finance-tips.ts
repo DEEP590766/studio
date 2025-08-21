@@ -11,6 +11,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { Expense } from '@/lib/types';
 
 const FinanceTipsInputSchema = z.object({
   topic: z
@@ -22,6 +23,7 @@ const FinanceTipsInputSchema = z.object({
     .optional()
     .default(3)
     .describe('Number of tips to generate.'),
+  expenses: z.array(z.any()).optional().describe('An array of recent user expenses to provide personalized advice.')
 });
 export type FinanceTipsInput = z.infer<typeof FinanceTipsInputSchema>;
 
@@ -38,7 +40,17 @@ const prompt = ai.definePrompt({
   name: 'financeTipsPrompt',
   input: {schema: FinanceTipsInputSchema},
   output: {schema: FinanceTipsOutputSchema},
-  prompt: `You are a personal finance expert. Generate a list of {{{numberOfTips}}} personal finance tips.
+  prompt: `You are a personal finance expert and advisory chatbot. Your goal is to help users improve their financial health.
+
+  {{#if expenses}}
+  You have been provided with the user's recent expense data. Analyze their spending habits and provide personalized, actionable advice. For example, suggest reducing spending in a specific category and redirecting the savings towards a goal. Be specific and encouraging.
+  Here are the recent expenses:
+  {{#each expenses}}
+  - {{this.category}}: {{this.amount}} on {{this.date}}
+  {{/each}}
+  {{else}}
+  Generate a list of {{{numberOfTips}}} personal finance tips.
+  {{/if}}
 
   {{#if topic}}
   The tips should be related to the following topic: {{{topic}}}.

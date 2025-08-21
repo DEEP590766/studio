@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Target, Lightbulb, PiggyBank } from "lucide-react";
+import { LayoutDashboard, Target, Lightbulb, PiggyBank, Bot } from "lucide-react";
 
 import {
   SidebarProvider,
@@ -29,6 +29,11 @@ export default function DashboardLayout({
       icon: LayoutDashboard,
     },
     {
+      href: "/dashboard/advisory",
+      label: "AI Advisory",
+      icon: Bot,
+    },
+    {
       href: "/dashboard/goals",
       label: "Savings Goals",
       icon: Target,
@@ -46,7 +51,7 @@ export default function DashboardLayout({
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
             <PiggyBank className="w-8 h-8 text-primary" />
-            <h1 className="text-xl font-bold">SpeakCents</h1>
+            <h1 className="text-xl font-bold">FinVoice</h1>
           </div>
         </SidebarHeader>
         <SidebarContent>

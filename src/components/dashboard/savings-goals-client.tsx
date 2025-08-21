@@ -14,6 +14,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -38,7 +39,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { format, differenceInMonths } from "date-fns";
 import { cn } from "@/lib/utils";
 
 
@@ -67,6 +68,14 @@ export function SavingsGoalsClient() {
     form.reset();
     setDialogOpen(false);
   }
+  
+  const getInvestmentSuggestion = (goal: { targetAmount: number; targetDate: string }) => {
+    const months = differenceInMonths(new Date(goal.targetDate), new Date());
+    if (months <= 0) return "This goal's target date has passed.";
+    const monthlyContribution = goal.targetAmount / months;
+    return `To reach your goal, consider a monthly SIP of ${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(monthlyContribution)}.`;
+  };
+
 
   if (loading) {
     return <p>Loading goals...</p>;
@@ -76,7 +85,7 @@ export function SavingsGoalsClient() {
     <div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {goals.map((goal) => (
-          <Card key={goal.id}>
+          <Card key={goal.id} className="flex flex-col">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Target /> {goal.name}
@@ -85,7 +94,7 @@ export function SavingsGoalsClient() {
                 Target Date: {new Date(goal.targetDate).toLocaleDateString()}
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-grow">
               <Progress value={(goal.currentAmount / goal.targetAmount) * 100} className="mb-2" />
               <div className="flex justify-between text-sm">
                 <span className="font-medium">
@@ -96,6 +105,9 @@ export function SavingsGoalsClient() {
                 </span>
               </div>
             </CardContent>
+            <CardFooter>
+                <p className="text-xs text-muted-foreground italic">{getInvestmentSuggestion(goal)}</p>
+            </CardFooter>
           </Card>
         ))}
         
@@ -111,12 +123,12 @@ export function SavingsGoalsClient() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Set a New Savings Goal</DialogTitle>
-              <DialogDescription>What are you saving up for?</DialogDescription>
+              <DialogDescription>What are you saving up for? We'll recommend a plan.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField control={form.control} name="name" render={({ field }) => (
-                  <FormItem><FormLabel>Goal Name</FormLabel><FormControl><Input placeholder="e.g., New Laptop" {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Goal Name</FormLabel><FormControl><Input placeholder="e.g., New Car" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="targetAmount" render={({ field }) => (
                   <FormItem><FormLabel>Target Amount (₹)</FormLabel><FormControl><Input type="number" placeholder="50000" {...field} /></FormControl><FormMessage /></FormItem>
