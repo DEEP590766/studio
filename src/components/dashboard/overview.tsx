@@ -19,6 +19,7 @@ import type { Expense } from "@/lib/types";
 import { useMemo } from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 const chartConfig = {
   expenses: {
@@ -146,32 +147,51 @@ export function Overview({ expenses }: { expenses: Expense[] }) {
                 )}
             </CardContent>
         </Card>
-      <Card className={cardHoverEffect}>
+      <Card className={cn(cardHoverEffect, "md:col-span-1 flex flex-col")}>
         <CardHeader>
           <CardTitle>Expense Breakdown</CardTitle>
            <CardDescription>Spending distribution for the current month.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex-1 flex flex-col justify-center">
           {categoryData.length > 0 ? (
-            <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[250px]">
-              <PieChart>
-                <ChartTooltip
-                  cursor={false}
-                  content={<ChartTooltipContent hideLabel />}
-                />
-                <Pie
-                  data={categoryData}
-                  dataKey="value"
-                  nameKey="name"
-                  innerRadius={60}
-                  strokeWidth={5}
-                >
-                    {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
+            <div className="grid grid-cols-2 gap-4">
+                <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[150px]">
+                <PieChart>
+                    <ChartTooltip
+                    cursor={false}
+                    content={<ChartTooltipContent hideLabel />}
+                    />
+                    <Pie
+                    data={categoryData}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={40}
+                    strokeWidth={2}
+                    >
+                        {categoryData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                    </Pie>
+                </PieChart>
+                </ChartContainer>
+                <div className="flex flex-col justify-center space-y-2">
+                    {categoryData.map((entry) => (
+                        <div key={entry.name} className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-2">
+                                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.fill }} />
+                                <span>{entry.name}</span>
+                            </div>
+                            <span className="font-medium">
+                                {new Intl.NumberFormat("en-IN", {
+                                style: "currency",
+                                currency: "INR",
+                                maximumFractionDigits: 0,
+                                }).format(entry.value)}
+                            </span>
+                        </div>
                     ))}
-                </Pie>
-              </PieChart>
-            </ChartContainer>
+                </div>
+            </div>
           ) : (
             <div className="flex items-center justify-center h-[200px] text-muted-foreground">
               No expenses this month to show chart.
