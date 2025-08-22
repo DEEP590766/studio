@@ -33,6 +33,7 @@ const profileFormSchema = z.object({
   phone: z.string().optional(),
   dob: z.string().optional(),
   profilePicture: z.string().url("Please enter a valid URL.").optional(),
+  monthlyIncome: z.coerce.number().min(0, "Income must be a positive number.").optional(),
 });
 
 export function ProfileClient() {
@@ -48,6 +49,7 @@ export function ProfileClient() {
         phone: profile.phone || "",
         dob: profile.dob || "",
         profilePicture: profile.profilePicture || "",
+        monthlyIncome: profile.monthlyIncome || 0,
     },
     // Reset values when the profile data loads
     resetOptions: {
@@ -63,6 +65,7 @@ export function ProfileClient() {
         phone: profile.phone || "",
         dob: profile.dob || "",
         profilePicture: profile.profilePicture || "",
+        monthlyIncome: profile.monthlyIncome || 0,
       });
     }
   }, [loading, profile, form]);
@@ -159,6 +162,13 @@ export function ProfileClient() {
                     <FormItem>
                         <FormLabel>Date of Birth</FormLabel>
                         <FormControl><Input type="date" {...field} /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+                 <FormField control={form.control} name="monthlyIncome" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Monthly Income (₹)</FormLabel>
+                        <FormControl><Input type="number" placeholder="50000" {...field} /></FormControl>
                         <FormMessage />
                     </FormItem>
                 )} />

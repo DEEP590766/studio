@@ -19,4 +19,5 @@ export interface UserProfile {
   phone?: string;
   dob?: string;
   profilePicture?: string;
+  monthlyIncome?: number;
 }

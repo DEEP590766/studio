@@ -12,6 +12,7 @@ const defaultProfile: UserProfile = {
   phone: "123-456-7890",
   dob: "1990-01-01",
   profilePicture: "https://placehold.co/128x128.png",
+  monthlyIncome: 50000,
 };
 
 

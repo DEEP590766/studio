@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Target, Lightbulb, Wallet, Bot, Sun, Moon, UserCircle } from "lucide-react";
+import { LayoutDashboard, Target, Lightbulb, Bot, Sun, Moon, UserCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Logo } from "@/components/logo";
 
@@ -43,7 +43,7 @@ export default function DashboardLayout({
     },
     {
       href: "/dashboard/advisory",
-      label: "AI Advisory",
+      label: "Investment Advisory",
       icon: Bot,
     },
     {
@@ -73,7 +73,7 @@ export default function DashboardLayout({
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
             <Logo />
-            <h1 className="text-xl font-bold">Zenitho</h1>
+            <h1 className="text-xl font-bold">FinSpeak</h1>
           </div>
         </SidebarHeader>
         <SidebarContent>

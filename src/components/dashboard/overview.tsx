@@ -14,12 +14,12 @@ import {
   ChartTooltipContent,
   ChartConfig
 } from "@/components/ui/chart";
-import { PieChart, Pie, Cell, Tooltip } from "recharts";
+import { PieChart, Pie, Cell } from "recharts";
 import type { Expense } from "@/lib/types";
 import { useMemo } from "react";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, Percent } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
+import { useProfile } from "@/hooks/use-profile";
 
 const chartConfig = {
   expenses: {
@@ -52,7 +52,9 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function Overview({ expenses }: { expenses: Expense[] }) {
-  const { totalMonthlyExpense, categoryData, weeklyAverage, previousWeeklyAverage } = useMemo(() => {
+  const { profile } = useProfile();
+
+  const { totalMonthlyExpense, categoryData, weeklyAverage, previousWeeklyAverage, savingRate } = useMemo(() => {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfToday = new Date();
@@ -64,6 +66,12 @@ export function Overview({ expenses }: { expenses: Expense[] }) {
     });
 
     const total = currentMonthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    
+    let rate = null;
+    if (profile.monthlyIncome && profile.monthlyIncome > 0) {
+        const savings = profile.monthlyIncome - total;
+        rate = (savings / profile.monthlyIncome) * 100;
+    }
 
     const data = Object.keys(chartConfig)
       .filter(key => key !== 'expenses')
@@ -99,8 +107,9 @@ export function Overview({ expenses }: { expenses: Expense[] }) {
         categoryData: data,
         weeklyAverage: avg1,
         previousWeeklyAverage: avg2,
+        savingRate: rate,
     };
-  }, [expenses]);
+  }, [expenses, profile.monthlyIncome]);
   
   const weeklyChange = previousWeeklyAverage > 0 
     ? ((weeklyAverage - previousWeeklyAverage) / previousWeeklyAverage) * 100
@@ -112,8 +121,8 @@ export function Overview({ expenses }: { expenses: Expense[] }) {
   const cardHoverEffect = "transition-all duration-200 hover:shadow-xl hover:-translate-y-1 hover:border-accent";
 
   return (
-    <div className="grid gap-6 md:grid-cols-3">
-      <Card className={cardHoverEffect}>
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <Card className={cn(cardHoverEffect, "lg:col-span-1")}>
         <CardHeader>
           <CardTitle>Total Expenses (This Month)</CardTitle>
            <CardDescription>Your total spending for the current month.</CardDescription>
@@ -127,30 +136,53 @@ export function Overview({ expenses }: { expenses: Expense[] }) {
           </p>
         </CardContent>
       </Card>
-        <Card className={cardHoverEffect}>
-            <CardHeader>
-                <CardTitle>7-Day Average Spend</CardTitle>
-                <CardDescription>Your average daily spend over the last week.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                 <p className="text-4xl font-bold text-primary">
-                    {new Intl.NumberFormat("en-IN", {
-                    style: "currency",
-                    currency: "INR",
-                    }).format(weeklyAverage)}
-                </p>
-                {previousWeeklyAverage > 0 && (
-                    <div className={`text-xs flex items-center ${changeColor}`}>
-                        <ChangeIcon className="w-4 h-4 mr-1" />
-                        <span>{weeklyChange.toFixed(2)}% from previous week</span>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-      <Card className={cn(cardHoverEffect, "md:col-span-1 flex flex-col")}>
+      <Card className={cn(cardHoverEffect, "lg:col-span-1")}>
+        <CardHeader>
+            <CardTitle>7-Day Average Spend</CardTitle>
+            <CardDescription>Your average daily spend over the last week.</CardDescription>
+        </CardHeader>
+        <CardContent>
+              <p className="text-4xl font-bold text-primary">
+                {new Intl.NumberFormat("en-IN", {
+                style: "currency",
+                currency: "INR",
+                }).format(weeklyAverage)}
+            </p>
+            {previousWeeklyAverage > 0 && (
+                <div className={`text-xs flex items-center ${changeColor}`}>
+                    <ChangeIcon className="w-4 h-4 mr-1" />
+                    <span>{weeklyChange.toFixed(2)}% from previous week</span>
+                </div>
+            )}
+        </CardContent>
+      </Card>
+       <Card className={cn(cardHoverEffect, "lg:col-span-1")}>
+        <CardHeader>
+            <CardTitle>Saving Rate</CardTitle>
+            <CardDescription>The percentage of income you're saving.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            {savingRate !== null ? (
+                <>
+                 <p className={cn("text-4xl font-bold", savingRate >= 20 ? 'text-green-500' : savingRate >= 10 ? 'text-yellow-500' : 'text-destructive')}>
+                    {savingRate.toFixed(1)}<span className="text-2xl">%</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Based on a monthly income of {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(profile.monthlyIncome || 0)}
+                  </p>
+                </>
+            ) : (
+                <div className="text-center text-muted-foreground pt-4">
+                  <Percent className="w-8 h-8 mx-auto mb-2" />
+                  <p className="text-sm">Set your monthly income in your profile to see your saving rate.</p>
+                </div>
+            )}
+        </CardContent>
+      </Card>
+      <Card className={cn(cardHoverEffect, "md:col-span-2 lg:col-span-1 flex flex-col")}>
         <CardHeader>
           <CardTitle>Expense Breakdown</CardTitle>
-           <CardDescription>Spending distribution for the current month.</CardDescription>
+           <CardDescription>Spending distribution for this month.</CardDescription>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col justify-center">
           {categoryData.length > 0 ? (
@@ -193,8 +225,8 @@ export function Overview({ expenses }: { expenses: Expense[] }) {
                 </div>
             </div>
           ) : (
-            <div className="flex items-center justify-center h-[200px] text-muted-foreground">
-              No expenses this month to show chart.
+            <div className="flex items-center justify-center h-full text-muted-foreground">
+              No expenses this month.
             </div>
           )}
         </CardContent>
