@@ -1,10 +1,11 @@
+
 "use client";
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { PlusCircle, Target, Calendar as CalendarIcon } from "lucide-react";
+import { PlusCircle, Target, Calendar as CalendarIcon, PiggyBank } from "lucide-react";
 
 import { useGoals } from "@/hooks/use-goals";
 import { Button } from "@/components/ui/button";
@@ -39,8 +40,9 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format, differenceInMonths } from "date-fns";
+import { format, differenceInMonths, formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import type { Goal } from "@/lib/types";
 
 
 const goalFormSchema = z.object({
@@ -48,6 +50,8 @@ const goalFormSchema = z.object({
   targetAmount: z.coerce.number().positive("Target amount must be positive."),
   targetDate: z.date({ required_error: "A target date is required." }),
 });
+
+const cardHoverEffect = "transition-all duration-200 hover:shadow-xl hover:-translate-y-1 hover:border-primary";
 
 export function SavingsGoalsClient() {
   const { goals, addGoal, loading } = useGoals();
@@ -69,11 +73,16 @@ export function SavingsGoalsClient() {
     setDialogOpen(false);
   }
   
-  const getInvestmentSuggestion = (goal: { targetAmount: number; targetDate: string }) => {
+  const getInvestmentSuggestion = (goal: Goal) => {
     const months = differenceInMonths(new Date(goal.targetDate), new Date());
-    if (months <= 0) return "This goal's target date has passed.";
-    const monthlyContribution = goal.targetAmount / months;
-    return `To reach your goal, consider a monthly SIP of ${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(monthlyContribution)}.`;
+    if (months <= 0) return "Target date has passed.";
+    
+    // Assuming currentAmount is already saved towards the goal from other sources.
+    const remainingAmount = goal.targetAmount - goal.currentAmount;
+    if (remainingAmount <= 0) return "Goal achieved! Congratulations!";
+
+    const monthlyContribution = remainingAmount / months;
+    return `Save ${new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(monthlyContribution)}/month to reach your goal.`;
   };
 
 
@@ -85,38 +94,46 @@ export function SavingsGoalsClient() {
     <div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {goals.map((goal) => (
-          <Card key={goal.id} className="flex flex-col">
+          <Card key={goal.id} className={cn("flex flex-col", cardHoverEffect)}>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target /> {goal.name}
-              </CardTitle>
-              <CardDescription>
-                Target Date: {new Date(goal.targetDate).toLocaleDateString()}
-              </CardDescription>
+              <div className="flex justify-between items-start">
+                <div>
+                    <CardTitle className="flex items-center gap-2">
+                        <Target /> {goal.name}
+                    </CardTitle>
+                    <CardDescription>
+                        {formatDistanceToNow(new Date(goal.targetDate), { addSuffix: true })}
+                    </CardDescription>
+                </div>
+                <Badge variant={goal.currentAmount >= goal.targetAmount ? "default" : "secondary"}>
+                    {(((goal.currentAmount / goal.targetAmount) * 100) || 0).toFixed(0)}%
+                </Badge>
+              </div>
             </CardHeader>
-            <CardContent className="flex-grow">
-              <Progress value={(goal.currentAmount / goal.targetAmount) * 100} className="mb-2" />
-              <div className="flex justify-between text-sm">
-                <span className="font-medium">
-                  {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(goal.currentAmount)}
+            <CardContent className="flex-grow space-y-2">
+              <Progress value={(goal.currentAmount / goal.targetAmount) * 100} className="h-2" />
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">
+                  {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(goal.currentAmount)}
                 </span>
-                <span className="text-muted-foreground">
-                  of {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(goal.targetAmount)}
+                <span>
+                  Target: {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(goal.targetAmount)}
                 </span>
               </div>
             </CardContent>
             <CardFooter>
-                <p className="text-xs text-muted-foreground italic">{getInvestmentSuggestion(goal)}</p>
+                <p className="text-xs text-primary font-semibold">{getInvestmentSuggestion(goal)}</p>
             </CardFooter>
           </Card>
         ))}
         
         <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Card className="flex items-center justify-center border-dashed hover:border-primary hover:text-primary transition-colors cursor-pointer min-h-[200px]">
-              <div className="text-center">
-                <PlusCircle className="mx-auto h-12 w-12" />
+            <Card className={cn("flex items-center justify-center border-dashed hover:border-primary hover:text-primary transition-colors cursor-pointer min-h-[260px]", cardHoverEffect)}>
+              <div className="text-center p-4">
+                <PlusCircle className="mx-auto h-12 w-12 text-muted-foreground group-hover:text-primary" />
                 <p className="mt-2 font-semibold">Add New Goal</p>
+                <p className="text-sm text-muted-foreground mt-1">Set a new target to save towards.</p>
               </div>
             </Card>
           </DialogTrigger>
@@ -128,10 +145,10 @@ export function SavingsGoalsClient() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField control={form.control} name="name" render={({ field }) => (
-                  <FormItem><FormLabel>Goal Name</FormLabel><FormControl><Input placeholder="e.g., New Car" {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Goal Name</FormLabel><FormControl><Input placeholder="e.g., New Laptop, Vacation" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="targetAmount" render={({ field }) => (
-                  <FormItem><FormLabel>Target Amount (₹)</FormLabel><FormControl><Input type="number" placeholder="50000" {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Target Amount (₹)</FormLabel><FormControl><Input type="number" placeholder="75000" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="targetDate" render={({ field }) => (
                   <FormItem className="flex flex-col"><FormLabel>Target Date</FormLabel>
@@ -156,10 +173,12 @@ export function SavingsGoalsClient() {
         </Dialog>
 
       </div>
-       {goals.length === 0 && (
-          <div className="text-center text-muted-foreground py-16">
-            <p>You haven't set any goals yet.</p>
-            <p>Click the card above to get started!</p>
+       {goals.length === 0 && !loading && (
+          <div className="text-center text-muted-foreground py-16 col-span-full">
+            <PiggyBank className="mx-auto h-16 w-16 mb-4" />
+            <h3 className="text-xl font-semibold">No Goals Yet</h3>
+            <p>You haven't set any savings goals.</p>
+            <p>Click the "Add New Goal" card to get started!</p>
           </div>
         )}
     </div>
