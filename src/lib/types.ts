@@ -12,3 +12,11 @@ export interface Goal {
   currentAmount: number;
   targetDate: string;
 }
+
+export interface UserProfile {
+  name?: string;
+  email?: string;
+  phone?: string;
+  dob?: string;
+  profilePicture?: string;
+}

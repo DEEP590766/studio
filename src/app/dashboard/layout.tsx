@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Target, Lightbulb, Wallet, Bot, Sun, Moon } from "lucide-react";
+import { LayoutDashboard, Target, Lightbulb, Wallet, Bot, Sun, Moon, UserCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Logo } from "@/components/logo";
 
@@ -56,6 +56,11 @@ export default function DashboardLayout({
       label: "Finance Tips",
       icon: Lightbulb,
     },
+    {
+      href: "/dashboard/profile",
+      label: "Profile",
+      icon: UserCircle,
+    }
   ];
 
   const handleThemeChange = (isChecked: boolean) => {
