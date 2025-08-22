@@ -73,7 +73,7 @@ export default function DashboardLayout({
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
             <Logo />
-            <h1 className="text-xl font-bold">FinSpeak</h1>
+            <h1 className="text-xl font-bold">InvoiceX</h1>
           </div>
         </SidebarHeader>
         <SidebarContent>

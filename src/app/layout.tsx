@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from "@/hooks/use-theme";
 
 export const metadata: Metadata = {
-  title: 'FinSpeak',
+  title: 'InvoiceX',
   description: 'Your personal finance & budgeting assistant with voice input.',
 };
 

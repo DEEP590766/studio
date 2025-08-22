@@ -7,7 +7,7 @@ export default function Home() {
       <div className="w-full max-w-md">
         <Card className="shadow-lg">
           <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-bold">FinSpeak</CardTitle>
+            <CardTitle className="text-3xl font-bold">InvoiceX</CardTitle>
             <CardDescription>Your personal finance assistant. Sign in to continue.</CardDescription>
           </CardHeader>
           <CardContent>
