@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -12,6 +11,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import { getStockPrice } from '../tools/get-stock-price';
 
 const AskLLMInputSchema = z.object({
   query: z.string().describe('The user\'s question about their finances.'),
@@ -32,9 +32,12 @@ const prompt = ai.definePrompt({
   name: 'askLLMPrompt',
   input: {schema: AskLLMInputSchema},
   output: {schema: AskLLMOutputSchema},
+  tools: [getStockPrice],
   prompt: `You are a friendly and helpful personal finance assistant. The user will ask you a question about their spending based on the expense data provided.
 
 Analyze the data and answer their question in a clear, conversational, and helpful tone.
+
+If the user asks about a stock price, use the getStockPrice tool to get the current price and include it in your answer.
 
 User's Question: {{{query}}}
 
