@@ -49,7 +49,6 @@ const textCommandFormSchema = z.object({
 });
 
 const categories = ["Food", "Travel", "Shopping", "Entertainment", "Bills", "Other"];
-const cardHoverEffect = "transition-all duration-200 hover:shadow-xl hover:-translate-y-1 hover:border-accent";
 
 export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Expense, "id" | "date">) => void }) {
   const { toast } = useToast();
@@ -58,12 +57,7 @@ export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Ex
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
 
 
   const manualForm = useForm<z.infer<typeof manualFormSchema>>({
@@ -99,13 +93,6 @@ export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Ex
     });
   }
   
-  const stopRecording = useCallback(() => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-      mediaRecorderRef.current.stop();
-    }
-    // The rest of the cleanup is in mediaRecorderRef.current.onstop
-  }, []);
-
   const processAudio = useCallback((audioBlob: Blob) => {
     if (audioBlob.size === 0) {
         toast({ variant: 'destructive', title: 'No audio detected', description: 'I didn’t hear anything. Please try again.' });
@@ -139,28 +126,16 @@ export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Ex
       mediaRecorderRef.current = new MediaRecorder(stream);
       audioChunksRef.current = [];
       setIsRecording(true);
-      toast({ title: "Recording Started", description: "Speak your expense now. Recording will stop automatically after a pause." });
+      toast({ title: "Recording Started", description: "Speak your expense now. Press the button again to stop." });
 
       mediaRecorderRef.current.ondataavailable = (event) => {
         audioChunksRef.current.push(event.data);
       };
 
       mediaRecorderRef.current.onstop = () => {
-        // Cleanup all resources
         if (streamRef.current) {
             streamRef.current.getTracks().forEach(track => track.stop());
             streamRef.current = null;
-        }
-        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
-            audioContextRef.current.close().then(() => audioContextRef.current = null);
-        }
-        if (silenceTimerRef.current) {
-            clearTimeout(silenceTimerRef.current);
-            silenceTimerRef.current = null;
-        }
-        if (animationFrameRef.current) {
-            cancelAnimationFrame(animationFrameRef.current);
-            animationFrameRef.current = null;
         }
         
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
@@ -170,46 +145,6 @@ export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Ex
       };
 
       mediaRecorderRef.current.start();
-      
-      // Silence detection
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      analyserRef.current = audioContextRef.current.createAnalyser();
-      sourceRef.current = audioContextRef.current.createMediaStreamSource(stream);
-      sourceRef.current.connect(analyserRef.current);
-      analyserRef.current.fftSize = 256;
-      const bufferLength = analyserRef.current.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
-
-      const checkForSilence = () => {
-          if (!analyserRef.current) {
-            if(animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-            return;
-          }
-
-          analyserRef.current.getByteTimeDomainData(dataArray);
-          let sum = 0;
-          for (let i = 0; i < bufferLength; i++) {
-              const x = dataArray[i] / 128.0 - 1.0;
-              sum += x * x;
-          }
-          const rms = Math.sqrt(sum / bufferLength);
-
-          if (rms < 0.01) { // Threshold for silence
-              if (!silenceTimerRef.current) {
-                  silenceTimerRef.current = setTimeout(() => {
-                      stopRecording();
-                  }, 2000); // 2 seconds of silence
-              }
-          } else {
-              if (silenceTimerRef.current) {
-                  clearTimeout(silenceTimerRef.current);
-                  silenceTimerRef.current = null;
-              }
-          }
-          animationFrameRef.current = requestAnimationFrame(checkForSilence);
-      };
-      checkForSilence();
-
 
     } catch (err) {
       toast({ variant: "destructive", title: "Microphone Error", description: "Could not access microphone." });
@@ -219,12 +154,14 @@ export function ExpenseAdder({ onAddExpense }: { onAddExpense: (expense: Omit<Ex
   };
 
   const handleStopRecording = () => {
-    stopRecording();
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.stop();
+    }
   }
 
 
   return (
-    <Card className={cn("h-full", cardHoverEffect)}>
+    <Card className="h-full">
       <CardHeader>
         <CardTitle>Add Expense</CardTitle>
         <CardDescription>Record a new transaction.</CardDescription>
